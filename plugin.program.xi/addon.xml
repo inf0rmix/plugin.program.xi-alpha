@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<addon
+		id="plugin.program.xi"
+		version="1.43"
+		name="eXtensibleInterface"
+		provider-name="Matthias Fenner">
+	<extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>executable audio video image</provides>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<summary>An extensible Interface for general access to anything you get from a desktop machine</summary>
+		<description>This plugin enables you to optimize the access to any media source using desktop-files and advanced dialog script/plugins (xidlg/xipy). It enables you to record any played media-source and includes many more nifty addons like e.g. webbrowser, pdf and document-viewer, emulation-frontend, kde/plasma widget, firefox-plugin, etc. Everything you miss from your desktop should be included here. Feel free to email me more whishes.</description>
+	</extension>
+</addon>

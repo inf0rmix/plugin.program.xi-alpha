@@ -1,0 +1,7 @@
+[Desktop Entry]
+Comment=rss
+Icon=video-x-generic
+Type=Link
+LogoURL=http://it-blogger.net/pics/ios/apps/tagesschau-app-for-ios.png
+URL=rss://www.tagesschau.de/export/video-podcast/webl/tagesschau/
+MType=rss-video

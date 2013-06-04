@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <!-- General -->
+  <category label="30218">
+    <setting id="viewMode" type="text" label="Default View-Mode" default="50" />
+    <setting id="useQWebView" type="bool" label="Use internal Webbrowser" default="true" />
+    <setting id="xdgBaseDir" type="folder" source="auto" label="Default xdg-directory" default="" />
+    <setting id="dlgDefaultDir" type="folder" source="auto" label="Default filebrowse-directory" default="/" />
+  </category>
+</settings>

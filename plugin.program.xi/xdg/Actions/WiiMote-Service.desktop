@@ -1,0 +1,16 @@
+[Desktop Entry]
+Comment=
+Exec=echo ficken
+GenericName=wminput
+Icon=infrared-remote
+MimeType=
+Name=Wiimote-Service
+MType=service
+StartupNotify=false
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=image-x-generic
+Type=Link
+LogoURL=http://upload.wikimedia.org/wikipedia/commons/6/63/Wikipedia-logo.png
+MType=rss-image
+URL=rss://commons.wikimedia.org/w/api.php?action=featuredfeed&feed=potd&feedformat=atom

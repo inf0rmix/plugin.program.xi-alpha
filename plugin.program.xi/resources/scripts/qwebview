@@ -1,0 +1,195 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+from PyQt4 import QtGui , QtCore , uic
+from sys import argv , exit
+from os import system , popen , open , read , getenv , getpid , path , listdir , O_RDONLY
+from select import select
+
+import dbus
+import dbus.service
+from dbus.mainloop.qt import DBusQtMainLoop
+
+ARGLEN = len(argv)
+OURXBMCDIR = getenv('HOME')+'/.xbmc'
+OURFIFO = OURXBMCDIR + '/temp/.qwebview.fifo'
+OURSCRIPT = path.realpath(__file__)
+OURUIFILE = OURSCRIPT+'.ui'
+OURXBMCSCRIPT = OURSCRIPT+'.py'
+
+def file_read(myfile):
+  if path.exists(myfile):
+    f = open(myfile, 'r')
+    data = f.read()
+    f.close()
+    return data
+
+def file_write(myfile,mytxt):
+  f = open(myfile, 'w')
+  f.write(mytxt)
+  f.close()
+
+def system_run(cmd):
+  stream = popen(cmd, 'r')
+  lines = stream.read()
+  stream.close()
+  return lines
+
+def get_xbmc_geo():
+  mydata = system_run('xwininfo -name "XBMC Media Center"')
+  for myline in mydata.split('\n'):
+    myline = myline
+    mysplit = myline.split(':',1)
+    if len(mysplit) == 2:
+      myarg ,myval = mysplit[0].strip(' ') , mysplit[1].strip(' ')
+      if myval.isdigit():
+	if myarg == 'Absolute upper-left X':	myx = myval
+	elif myarg == 'Absolute upper-left Y':	myy = myval
+	elif myarg == 'Width':	myw = myval
+	elif myarg == 'Height':	myh = myval
+  print int(myw),int(myh),int(myx),int(myy)
+  return int(myw),int(myh),int(myx),int(myy)
+
+def htmltmp_imgview(myurl):
+  myout = '<html>\n'
+  myout += '<body bgcolor="#000000">\n'
+  myout += '<center><img src="' + myurl + '" height="100%"></center>\n'
+  myout += '</body>\n'
+  myout += '</html>\n\n'
+  file_write('/tmp/test.html',myout)
+  return myout
+
+class Reader(QtCore.QThread):
+	dataReceived = QtCore.pyqtSignal(str)
+	running = True
+
+	def __init__(self):
+	  QtCore.QThread.__init__(self)
+	  if path.exists(OURFIFO):
+	    system("rm -f '"+OURFIFO+"'")
+	  system("mkfifo '"+OURFIFO+"'")
+
+	def run(self):
+	  self.running = True
+	  while self.running:
+	    try:
+	      self.myfifo = open(OURFIFO, O_RDONLY)
+	    except:
+	      self.running = False
+	    if self.running:
+	      print "loop"
+	      select([self.myfifo], [], [])
+	      system('logger read')
+	      string = read(self.myfifo, 8)
+	      system('logger got')
+	      if len(string):
+		self.dataReceived.emit(string)
+		if string == '10':
+		  self.running = False
+
+class MainWindow(QtGui.QMainWindow):
+  
+  ui , ctimer , utimer = None , None , None
+  cfiles = {}
+  
+  def __init__(self):
+    super(MainWindow, self).__init__()
+    self.setWindowFlags(QtCore.Qt.CustomizeWindowHint)
+    self.ui = uic.loadUi(OURUIFILE, self)
+    mycmd , myurl = "view" , "http://www.spiegel.de"
+    if len(argv) > 1:
+      if argv[1].find('://') > -1:
+	myurl = argv[1]
+      elif len(argv) > 2:
+	if argv[2].find('://') > -1:
+	  myurl = argv[2]
+	  mycmd = argv[1]
+    if mycmd == 'imgview':
+      htmltmp_imgview(myurl)
+      myurl = 'file:///tmp/test.html'
+    elif mycmd == 'rssview':
+      system('/home/inf0rmix/xbmc-addons/scripts/rss2html "'+myurl.replace('rss://','http://')+'" /tmp/rss.html')
+      myurl = 'file:///tmp/rss.html'
+    #Start fifo reader for communication with xbmc-script
+    self.reader = Reader()
+    self.reader.dataReceived.connect(self.dataReceived)
+    self.reader.start()
+    #MainWindow
+    MainUrl = QtCore.QUrl(myurl)
+    self.ui.WebView.setUrl(MainUrl)
+    myw , myh , myx , myy = get_xbmc_geo()
+    self.ui.setGeometry(myx , myy , myw , myh)
+    #self.ui.showFullScreen()
+    self.ui.show()
+    # 
+    system('xbmc-send -a "RunScript('+OURXBMCSCRIPT+')"')
+
+  def do_setZoom(self,myzp='+'):
+    myzoom = self.ui.WebView.zoomFactor()
+    if myzp == '+':
+      mynewzoom = (myzoom/100)*110
+    else:
+      mynewzoom = (myzoom/100)*90
+    self.ui.WebView.setProperty('zoomFactor',mynewzoom)
+  
+#QtCore.QCoreApplication.sendEvent(self.editor,QtGui.QKeyEvent(QtCore.QEvent.KeyPress, QtCore.Qt.Key_Return, QtCore.Qt.NoModifier, 'Return'))  
+  def dataReceived(self, data):
+    mykey , mydokey = '' , True
+    if data == '0':	mydokey , mykey = False , 'doquit'
+    elif data == '1':	mykey = QtCore.Qt.Key_Left
+    elif data == '2':	mykey = QtCore.Qt.Key_Right
+    elif data == '3':	mykey = QtCore.Qt.Key_Up
+    elif data == '4':	mykey = QtCore.Qt.Key_Down
+    elif data == '5':	mykey = QtCore.Qt.Key_PageUp
+    elif data == '6':	mykey = QtCore.Qt.Key_PageDown
+    elif data == '7':	mykey = QtCore.Qt.Key_Enter
+    elif data == '10':	mykey = QtCore.Qt.Key_Escape
+    elif data == '117':	mykey = QtCore.Qt.Key_Tab
+    elif data == '88':	mykey , mydokey = '+' , False
+    elif data == '89':	mykey , mydokey = '-' , False
+    else:		mydokey = False
+    if mydokey:
+      QtGui.QApplication.sendEvent(self.ui.WebView,QtGui.QKeyEvent(QtGui.QKeyEvent.KeyPress,mykey,QtCore.Qt.NoModifier))
+    else:
+      if mykey == 'doquit':
+	self.closeAll(False)
+      elif mykey == '+':
+	self.do_setZoom('+')
+      elif mykey == '-':
+	self.do_setZoom('-')
+
+  def closeAll(self,notifyXBMC=True):
+    system("echo 10 >> '"+OURFIFO+"'")
+    #system("rm -f '"+OURFIFO+"'")
+    if notifyXBMC:
+      system("xbmc-send --host=127.0.0.1 -a back")
+    self.close()
+
+  def keyPressEvent(self, e):
+    if e.key() == QtCore.Qt.Key_Escape:
+      if (e.modifiers() & QtCore.Qt.ShiftModifier):
+	self.closeAll()
+      elif (e.modifiers() & QtCore.Qt.AltModifier):
+	self.closeAll()
+      else:
+	self.closeAll()
+    elif e.key() == QtCore.Qt.Key_Plus:
+      self.do_setZoom('+')
+    elif e.key() == QtCore.Qt.Key_Minus:
+      self.do_setZoom('-')
+
+#Main Application
+def main():
+    DBusQtMainLoop(set_as_default = True)
+    app = QtGui.QApplication(argv)
+    ex = MainWindow()
+    #ex.reader.running = False
+    #calc = qsmbus(ex)
+    exit(app.exec_())
+
+
+
+if __name__ == '__main__':
+    main()
+

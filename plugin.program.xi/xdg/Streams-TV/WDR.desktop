@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=video-x-generic
+Type=Link
+MType=vstream
+LogoURL=http://www.logolook.de/wp-content/uploads/wdr-logo.png
+URL=rtsp://rtspgen.api.core-cdn.net/10177xwdrsw04/sw04_ww_webl

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=image-x-generic
+Type=Link
+MType=rss-image
+LogoURL=http://icons-ak.wxug.com/i/wu/wuLogoURL.png
+URL=rss://rss.wunderground.com/data/wuiRSS/approvers_choice_photos_rss.xml

@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from sys import argv
+from os import system , path , popen , getenv
+
+USER_HOME = getenv('HOME')
+
+def file_write(myfile,mytxt):
+  f = open(myfile, 'w')
+  f.write(mytxt)
+  f.close()
+
+from md5 import new as md5_new
+def get_fm_thumbnail(myfile,myforce=True):
+  myfile = myfile.replace(' ','%20')
+  if myfile.startswith('/'):
+    myuri = 'file://'+myfile
+  elif myfile.find('://') > -1:
+    myuri = myfile
+  else:
+    myuri = 'file://'+myfile
+  file_hash = md5_new(myuri).hexdigest()
+  #tb_filename = os.path.join(os.path.expanduser('~/.thumbnails/large'),file_hash) + '.png'
+  tb_filename_large = USER_HOME + '/.thumbnails/large/'+file_hash + '.png'
+  tb_filename_normal = USER_HOME + '/.thumbnails/normal/'+file_hash + '.png'
+  if myforce:
+    return tb_filename_large
+  elif path.exists(tb_filename_large):
+      return tb_filename_large
+  elif path.exists(tb_filename_normal):
+      return tb_filename_normal
+  else:
+      return ''
+
+##
+## Main
+##
+
+def convert_doc(mydoc):
+  mythumb = get_fm_thumbnail(mydoc,True)
+  if not path.exists(mythumb):
+    mycmd = "unoconv --stdout --format=pdf -e PageRange=1 '"+mydoc+"' | convert - -resize 256x256 '"+mythumb+"'"
+    system(mycmd)
+  return mythumb
+#if len(argv) > 2:
+  #oururl , ourtmp = argv[1] , argv[2]
+#else:
+  #oururl , ourtmp = argv[1] , 'stdout'
+
+print convert_doc('/home/inf0rmix/xbmc-addons/xdg-menu/checklist.ods')
+
+#write_main_rss(oururl , ourtmp)

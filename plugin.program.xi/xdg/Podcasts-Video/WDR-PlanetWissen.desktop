@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=video-x-generic
+Type=Link
+URL=rss://podcast.wdr.de/planetwissen.xml
+LogoURL=http://www.hoehner.com/start/sites/all/themes/h2/img/logos-partner/logos_app/wdr.jpg
+MType=rss-video

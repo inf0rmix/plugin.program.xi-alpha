@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=video-x-generic
+Type=Link
+MType=vstream
+LogoURL=http://www.latetedansleposte.com/wp-content/uploads/2008/12/euronews-logo-new.jpg
+URL=rtsp://fr-par-5.stream-relay.hexaglobe.net:1935/rtpeuronewslive/de_video750_flash_all.sdp

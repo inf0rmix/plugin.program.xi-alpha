@@ -1,0 +1,19 @@
+[Desktop Entry]
+Comment[en_US]=
+Comment=
+Exec=xset dpms force off
+GenericName[en_US]=turn off monitor
+GenericName=turn off monitor
+Icon=preferences-desktop-display
+MimeType=
+Name[en_US]=Monitor-Standby
+Name=Monitor-Standby
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

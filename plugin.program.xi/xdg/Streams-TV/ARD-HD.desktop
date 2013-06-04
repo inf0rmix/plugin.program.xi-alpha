@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=video-x-generic
+Type=Link
+MType=vstream
+LogoURL=http://pix.qmde.de/www.quotenmeter.de/pics/ard/logo/ard_hd_logo.jpg
+URL=rtsp://daserste.edges.wowza.gl-systemhaus.de/live/mp4:daserste_int_1600

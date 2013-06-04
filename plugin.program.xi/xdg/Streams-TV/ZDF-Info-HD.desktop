@@ -1,0 +1,6 @@
+[Desktop Entry]
+Icon=video-x-generic
+Type=Link
+MType=vstream
+LogoURL=http://pati.bplaced.net/Streams/images/Logo_zdf.gif
+URL=http://zdf_ios_de-i.akamaihd.net/hls/live/205933/de09_v1/high/playlist.m3u8

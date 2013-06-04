@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from sys import argv , exit
+from re import sub as re_sub
+from os import system , popen , getenv , getpid , path , listdir , mkdir , makedirs , getenv
+import urllib2
+
+#TMPDIR=xbmc.translatePath( path.join( "special://" , "temp/DocumentViewer" ) )
+#TMPDIR= getenv('HOME')+'/.xbmc/temp/DocumentViewer'
+TMPDIR= getenv('HOME')+'/.xbmc/userdata/DocumentViewer'
+DONOTIFY=True
+
+#Open system-command in a pipe and return data
+def system_popen(cmd):
+  return popen(cmd, 'r').read()
+
+#Open system-command in a pipe and return data
+def system_run(cmd):
+  mycmd=cmd+' >/dev/null 2>&1'
+  system(mycmd)
+
+#Write mytxt into myfile
+def system_write(myfile,mytxt):
+  f = open(myfile, 'w')
+  f.write(mytxt)
+  f.close()
+
+#Convert pdf-document to image-directory using ghostscript and start slideshow directly - when ready: open index
+def get_pdf_slideshow(mypdf):
+  myname = path.basename(mypdf).rsplit('.',1)[0]
+  mytmp = TMPDIR+'/'+myname.replace(' ','')
+  mygscmd = "gs -dNOPAUSE -sDEVICE=jpeg -dJPEGQ=100 -r300x300 -q "
+  if not path.exists(mytmp):
+    makedirs(mytmp)
+    notify_xbmc('Converting,'+myname)
+    #myccmd = "convert -quality 100% -density 400 '"+mypdf+"' '"+mytmp+"/P%d.jpg'"
+    ##system(mygscmd + "-dFirstPage=1 -dLastPage=1 -sOutputFile='"+mytmp+"/P000.jpg' '"+mypdf+"' -c quit")
+    ##system('xbmc-run slideshow '+mytmp+' &')
+    system_run(mygscmd + "-dFirstPage=1 -sOutputFile='"+mytmp+"/P%03d.jpg' '"+mypdf+"' -c quit")
+  return mytmp
+
+def url_get(myurl):
+  if myurl.startswith('http') or myurl.startswith('https'):
+    system_run("wget -q -O/tmp/out.pdf '"+myurl+"'")
+    return '/tmp/out.pdf'
+  return myurl
+
+#Download file to local-tempdir
+def url_download(myurl):
+  """Copy the contents of a file from a given URL
+  to a local file.
+  """
+  #get basename
+  myusplit = myurl.split('/')
+  webHostName = myusplit[2]
+  webFileName = myusplit[-1]
+  if webFileName == '':
+    webFileName = webHostName+'_'+'index'
+  else:
+    webFileName = webHostName+'_'+webFileName.replace('%20','')
+  #remove query string
+  #if webFileName.find('?') > -1:
+    #webFileName = webFileName.rsplit('?',1)[0]
+  webFileName = webFileName.replace('?','').replace('%','').replace('&','').replace('+','')
+  webFileName = webFileName.replace(';','').replace('=','').replace('#','').replace('$','').replace(',','')
+  webFileName = TMPDIR+'/'+webFileName
+  if path.exists(webFileName):
+    #print "exists:" + webFileName
+    return webFileName
+  elif path.exists(webFileName+"_html.pdf"):
+    return webFileName+"_html.pdf"
+  else:
+    notify_xbmc('Downloading,'+myurl)
+  ##Get url
+  #Check head and render html document to pdf if detected
+  myreq , mytype = url_headcheck(myurl)
+  if mytype == 'text/html':
+    notify_xbmc('Rendering website,'+myurl)
+    system_run("wkhtmltopdf -B 0 -L 0 -R 0 -T 0 --stop-slow-scripts '"+myurl+"' '"+webFileName+"_html.pdf'")
+    return webFileName+"_html.pdf"
+  #myreq = urllib2.urlopen(myurl)
+  localFile = open(webFileName, 'w')
+  localFile.write(myreq.read())
+  myreq.close()
+  localFile.close()
+  return webFileName
+
+#Perform HEAD-Request and pass document to browser if neccessary
+def url_headcheck(myurl):
+  mysheaders = { 'User-Agent' : ' Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0' }
+  myhreq = urllib2.Request(myurl, None, mysheaders)
+  myreq = urllib2.urlopen(myhreq)
+  myhead = myreq.info()
+  mytype = myhead['Content-Type']
+  if mytype.find(';') > -1:
+    mytype = mytype.split(';',1)[0]
+  return myreq , mytype
+
+def get_local_file(myurl):
+  if myurl.startswith('http') or myurl.startswith('https') or myurl.startswith('ftp'):
+    mytmp = url_download(myurl)
+  elif myurl.startswith('file://'):
+    mytmp = myurl[7:]
+  elif myurl.startswith('/'):
+    mytmp = myurl
+  else:
+    mytmp = myurl
+  return mytmp
+
+#convert local input-document to tempdir/output-document in pdf format using uniconv
+def convert_document(mydoc):
+  mybase = path.basename(mydoc)
+  if mybase.find('.') > -1:
+    mybpre = mybase.rsplit('.',1)[0]
+  else:
+    mybpre = mybase
+  myctmp = TMPDIR+'/'+mybpre+'.pdf'
+  if not path.exists(myctmp):
+    notify_xbmc('Converting,'+mydoc)
+    system("unoconv --stdout --format=pdf '"+mydoc+"' > '"+myctmp+"' 2>/dev/null" )
+  return myctmp
+
+#get final dir and conver any to slide-show
+def get_slide_dir(myurl):
+  mytmp=get_local_file(myurl)
+  if mytmp.lower().endswith('.pdf'):
+    mydir = get_pdf_slideshow(mytmp)
+  else:
+    mydir = get_pdf_slideshow(convert_document(mytmp))
+  return mydir
+
+def view_slide(myurl):
+  mydir = get_slide_dir(myurl)
+  system('xbmc-run playlist-image '+mydir)
+  system('xbmc-run play')
+
+def notify_xbmc(mynotify):
+  if DONOTIFY:
+    mycmd = "xbmc-send -a 'Notification("+mynotify+")' >/dev/null 2>&1"
+    system(mycmd+' &')
+
+try:
+  print '\00'+get_slide_dir(argv[1])+'\00'
+except:
+  True
+
